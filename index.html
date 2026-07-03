@@ -70,6 +70,18 @@ select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg 
 .chip{font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--border-hi);color:var(--gray-700);cursor:pointer;background:transparent;transition:.12s}
 .chip:hover{border-color:var(--gray-400)}
 .chip.on{background:var(--purple-100);border-color:var(--purple-500);color:var(--purple-500)}
+.chip.sm{font-size:10px;padding:3px 8px}
+.chip.sm.on{background:var(--green-100);border-color:var(--green-500);color:var(--green-500)}
+.presets{margin-top:2px}
+.cgroup{margin-bottom:10px}
+.cgroup:last-child{margin-bottom:0}
+.grouphdr{width:100%;text-align:left;font-weight:500;display:flex;align-items:center;gap:6px;border-radius:var(--shape-sm);padding:6px 9px}
+.grouphdr.partial{border-color:var(--gray-400);color:var(--gray-800)}
+.gcheck{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border:1px solid var(--border-hi);border-radius:3px;font-size:9px;line-height:1;flex:none}
+.grouphdr.on .gcheck{background:var(--purple-500);border-color:var(--purple-500);color:#131019}
+.grouphdr.partial .gcheck{background:var(--gray-400);border-color:var(--gray-400);color:#000}
+.csub{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 0 10px}
+.csub .chip{font-size:10px;padding:3px 8px}
 
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .hint{font-size:11px;color:var(--faint);margin-top:-2px}
@@ -165,6 +177,7 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
         <div class="fgroup">
           <label class="lab">Min 24h volume (USD, summed)</label>
           <input class="field" id="minVol" inputmode="numeric" placeholder="e.g. 1000000"/>
+          <div class="chips presets" id="volPresets"></div>
         </div>
         <div class="fgroup" style="margin-top:12px">
           <label class="lab">Min depth (USD, summed)</label>
@@ -176,6 +189,7 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
               <option value="50">±0.5%</option>
             </select>
           </div>
+          <div class="chips presets" id="depPresets"></div>
           <div class="hint">Depth = bid+ask USD within band of mid, summed across selected providers.</div>
         </div>
         <div class="fgroup" style="margin-top:12px">
@@ -198,7 +212,7 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
 
       <div class="panel">
         <h3>Asset class</h3>
-        <div class="chips" id="classChips"></div>
+        <div id="classChips"></div>
       </div>
 
       <button class="btn ghost" id="resetBtn">Reset filters</button>
@@ -218,7 +232,7 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
               <th data-k="nsrc"># <span class="ar"></span></th>
               <th data-k="vsum">24h Vol (sel) <span class="ar"></span></th>
               <th data-k="dsum">Depth (sel) <span class="ar"></span></th>
-              <th data-k="srcNeed">Src→thresh</th>
+              <th data-k="srcNeed" title="How many selected venues (deepest first) must be summed to clear your Min depth threshold. 1 = one venue alone is enough. 'never' = even all selected venues together can't reach it. Blank if no Min depth is set.">Src→thresh <span class="infoi">ⓘ</span><span class="ar"></span></th>
               <th></th>
             </tr></thead>
             <tbody id="tbody"></tbody>
@@ -362,6 +376,7 @@ function render(){
     <div class="stat"><div class="n">${fmtUSD(totDep)}</div><div class="l">Σ depth ${bandLabel}</div></div>`;
   $("#reslabel").textContent=`${rows.length} assets · depth band ${bandLabel} · providers: ${[...STATE.providers].map(p=>PROV_SHORT[p]).join(", ")||"none"}`;
   updateProvCounts();
+  syncPresetHighlight();
 }
 
 function toggleDetail(tr,a,band,bandLabel){
@@ -411,17 +426,73 @@ function updateProvCounts(){
   });
 }
 
+const CLASS_GROUPS=[
+  {label:"Equities", keys:["equity (US)","equity (Asia)","equity (Europe)","equity (pre-IPO)"]},
+  {label:"Crypto", keys:["crypto","crypto index"]},
+  {label:"Macro & Other", keys:["commodity","FX","index (US)","index (Asia)","ETF"]},
+];
+const SUBLABEL={"equity (US)":"US","equity (Asia)":"Asia","equity (Europe)":"Europe","equity (pre-IPO)":"Pre-IPO",
+  "crypto":"Crypto","crypto index":"Crypto index","commodity":"Commodity","FX":"FX",
+  "index (US)":"US index","index (Asia)":"Asia index","ETF":"ETF"};
+
+function buildClassFilters(){
+  const counts={}; DATA.forEach(a=>counts[a.cls]=(counts[a.cls]||0)+1);
+  const grouped=new Set(CLASS_GROUPS.flatMap(g=>g.keys));
+  const other=[...new Set(DATA.map(a=>a.cls))].filter(c=>!grouped.has(c));
+  const groups=other.length?[...CLASS_GROUPS,{label:"Other",keys:other}]:CLASS_GROUPS;
+  const wrap=$("#classChips"); wrap.innerHTML="";
+  groups.forEach(g=>{
+    const present=g.keys.filter(k=>counts[k]);
+    if(!present.length) return;
+    const total=present.reduce((s,k)=>s+counts[k],0);
+    const selCount=present.filter(k=>STATE.classes.has(k)).length;
+    const state=selCount===0?"none":selCount===present.length?"all":"some";
+    const div=document.createElement("div"); div.className="cgroup";
+    div.innerHTML=`<button class="chip grouphdr ${state==='all'?'on':''} ${state==='some'?'partial':''}" data-group="${g.label}">
+        <span class="gcheck">${state==='all'?'✓':state==='some'?'–':''}</span>${g.label} <span style="opacity:.6">${total}</span>
+      </button>
+      <div class="csub">${present.map(k=>`<button class="chip ${STATE.classes.has(k)?'on':''}" data-c="${k}">${SUBLABEL[k]||k} <span style="opacity:.6">${counts[k]}</span></button>`).join("")}</div>`;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll('button[data-group]').forEach(btn=>btn.addEventListener("click",()=>{
+    const g=groups.find(x=>x.label===btn.dataset.group), present=g.keys.filter(k=>counts[k]);
+    const allOn=present.every(k=>STATE.classes.has(k));
+    present.forEach(k=>allOn?STATE.classes.delete(k):STATE.classes.add(k));
+    buildClassFilters(); render();
+  }));
+  wrap.querySelectorAll('button[data-c]').forEach(btn=>btn.addEventListener("click",e=>{
+    e.stopPropagation();
+    const c=btn.dataset.c; STATE.classes.has(c)?STATE.classes.delete(c):STATE.classes.add(c);
+    buildClassFilters(); render();
+  }));
+}
+
+const VOL_PRESETS=[100000,500000,1000000,5000000,10000000,50000000,100000000];
+const DEP_PRESETS=[10000,50000,100000,250000,500000,1000000,5000000];
+function fmtPreset(v){ return v>=1e6?"$"+(v/1e6).toString().replace(/\.0$/,"")+"M" : v>=1e3?"$"+(v/1e3).toString().replace(/\.0$/,"")+"k" : "$"+v; }
+function buildPresets(elId,values,inputId){
+  const el=$("#"+elId); el.innerHTML=values.map(v=>`<button class="chip sm" data-v="${v}">${fmtPreset(v)}</button>`).join("");
+  el.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{
+    const inp=$("#"+inputId);
+    inp.value = (inp.value===b.dataset.v) ? "" : b.dataset.v;   // click again to clear
+    render();
+  }));
+}
+function syncPresetHighlight(){
+  const vv=$("#minVol").value, dv=$("#minDep").value;
+  $$('#volPresets .chip').forEach(c=>c.classList.toggle("on",c.dataset.v===vv));
+  $$('#depPresets .chip').forEach(c=>c.classList.toggle("on",c.dataset.v===dv));
+}
+
 function buildFilters(){
   $("#provChecks").innerHTML=PROVIDERS.map(p=>`
     <label class="chk"><input type="checkbox" data-prov="${p.k}" checked><span>${p.label}</span><span class="cnt" data-k="${p.k}"></span></label>`).join("");
   $$('#provChecks input').forEach(i=>i.addEventListener("change",()=>{
     i.checked?STATE.providers.add(i.dataset.prov):STATE.providers.delete(i.dataset.prov); render();
   }));
-  const classes=[...new Set(DATA.map(a=>a.cls))].sort((a,b)=>DATA.filter(x=>x.cls===b).length-DATA.filter(x=>x.cls===a).length);
-  $("#classChips").innerHTML=classes.map(c=>`<button class="chip" data-c="${c}">${c} <span style="opacity:.6">${DATA.filter(a=>a.cls===c).length}</span></button>`).join("");
-  $$('#classChips .chip').forEach(ch=>ch.addEventListener("click",()=>{
-    const c=ch.dataset.c; if(STATE.classes.has(c)){STATE.classes.delete(c);ch.classList.remove("on");}else{STATE.classes.add(c);ch.classList.add("on");} render();
-  }));
+  buildClassFilters();
+  buildPresets("volPresets",VOL_PRESETS,"minVol");
+  buildPresets("depPresets",DEP_PRESETS,"minDep");
 }
 
 // events
@@ -434,9 +505,10 @@ $$('#tbl thead th[data-k]').forEach(th=>th.addEventListener("click",()=>{
 }));
 $("#resetBtn").addEventListener("click",()=>{
   $("#search").value="";$("#minVol").value="";$("#minDep").value="";$("#minSrc").value="1";$("#band").value="200";$("#minSources").value="1";
-  STATE.classes.clear();$$('#classChips .chip').forEach(c=>c.classList.remove("on"));
+  STATE.classes.clear();
   STATE.providers=new Set(PROVIDERS.map(p=>p.k));$$('#provChecks input').forEach(i=>i.checked=true);
-  STATE.requireAll=false;$("#requireAll").checked=false;render();
+  STATE.requireAll=false;$("#requireAll").checked=false;
+  buildClassFilters(); render();
 });
 $("#refreshBtn").addEventListener("click",doRefresh);
 
