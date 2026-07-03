@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SEDA Composite Feed Explorer</title>
+<style>
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Light.woff2") format("woff2");font-weight:300;font-display:swap}
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Regular.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
+
+:root{
+  --gray-100:#111012;--gray-200:#2a292e;--gray-300:#54525c;--gray-400:#868392;--gray-500:#a8a4b7;
+  --gray-700:#cbc8d4;--gray-800:#dcdbe2;--gray-900:#eeedf1;
+  --purple-100:#131019;--purple-300:#5d527f;--purple-500:#baa3fd;--purple-700:#d6c8fe;
+  --green-100:#02130d;--green-300:#0b5d42;--green-500:#16ba84;--green-600:#45c89d;
+  --red-100:#190707;--red-500:#fc4444;
+  --yellow-100:#191904;--yellow-500:#fbf724;
+  --bg:#000;--surface:var(--gray-100);--surface-2:var(--gray-200);
+  --text:#fff;--muted:var(--gray-500);--faint:var(--gray-400);--border:var(--gray-200);--border-hi:var(--gray-300);
+  --shape:8px 0 8px 0; --shape-sm:4px 0 4px 0; --radius:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:"Satoshi",system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+a{color:var(--purple-500);text-decoration:none}
+.wrap{max-width:1580px;margin:0 auto;padding:20px 22px 80px}
+
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .dot{width:14px;height:26px;background:var(--green-500);border-radius:var(--shape-sm)}
+h1{font-size:26px;font-weight:500;margin:0;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px;margin-top:3px}
+.meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.stamp{font-size:12px;color:var(--faint);text-align:right;line-height:1.3}
+.stamp b{color:var(--gray-700);font-weight:500}
+
+button{font-family:inherit;cursor:pointer;border:none;font-size:13px}
+.btn{background:var(--text);color:#000;font-weight:500;padding:9px 16px;border-radius:var(--shape);transition:.15s}
+.btn:hover{background:var(--gray-800)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--gray-800);border:1px solid var(--border-hi)}
+.btn.ghost:hover{background:var(--surface)}
+.btn.green{background:var(--green-500);color:#02130d}
+.btn.green:hover{background:var(--green-600)}
+.btn.sm{padding:6px 11px;font-size:12px}
+
+.layout{display:grid;grid-template-columns:296px 1fr;gap:20px;align-items:start}
+@media(max-width:1080px){.layout{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--shape);padding:16px}
+.panel h3{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);margin:0 0 12px;font-weight:500}
+.filters{position:sticky;top:16px;display:flex;flex-direction:column;gap:16px}
+.fgroup{display:flex;flex-direction:column;gap:8px}
+.fgroup>label.lab{font-size:12px;color:var(--gray-700);font-weight:500}
+
+.field{background:#000;border:1px solid var(--border-hi);border-radius:var(--shape-sm);color:var(--text);padding:8px 10px;font-family:inherit;font-size:13px;width:100%}
+.field:focus{outline:none;border-color:var(--green-500)}
+.field::placeholder{color:var(--gray-300)}
+select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23868392' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center;padding-right:28px}
+
+.checks{display:flex;flex-direction:column;gap:7px}
+.chk{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--gray-800);cursor:pointer;user-select:none}
+.chk input{appearance:none;width:16px;height:16px;border:1px solid var(--border-hi);border-radius:3px;background:#000;position:relative;cursor:pointer;flex:none}
+.chk input:checked{background:var(--green-500);border-color:var(--green-500)}
+.chk input:checked::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #02130d;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.chk .cnt{margin-left:auto;font-size:11px;color:var(--faint)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--border-hi);color:var(--gray-700);cursor:pointer;background:transparent;transition:.12s}
+.chip:hover{border-color:var(--gray-400)}
+.chip.on{background:var(--purple-100);border-color:var(--purple-500);color:var(--purple-500)}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:11px;color:var(--faint);margin-top:-2px}
+.divider{height:1px;background:var(--border);margin:2px 0}
+
+.statbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--shape-sm);padding:9px 14px;min-width:120px}
+.stat .n{font-size:20px;font-weight:500;letter-spacing:-.02em}
+.stat .l{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
+.stat .n.g{color:var(--green-500)}
+
+.tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--shape);overflow:hidden}
+.tscroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:900px}
+thead th{position:sticky;top:0;background:var(--surface-2);color:var(--gray-700);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:11px 12px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border)}
+thead th.l{text-align:left}
+thead th:hover{color:var(--text)}
+thead th .ar{opacity:.5;font-size:9px;margin-left:3px}
+tbody td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;font-variant-numeric:tabular-nums}
+tbody td.l{text-align:left}
+tbody tr:hover{background:#0c0b0d}
+tbody tr.exp{background:#0c0b0d}
+.tk{font-weight:500;font-size:14px}
+.nm{color:var(--faint);font-size:12px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid var(--border-hi);color:var(--gray-500);text-transform:capitalize}
+.badge.eq{color:var(--purple-500);border-color:var(--purple-300)}
+.badge.cr{color:var(--green-600);border-color:var(--green-300)}
+.badge.co{color:var(--yellow-500);border-color:#7e7c12}
+.pv{display:inline-flex;gap:3px}
+.pv .p{width:9px;height:9px;border-radius:2px;background:var(--gray-300)}
+.pv .p.on{background:var(--green-500)}
+.num.z{color:var(--gray-300)}
+.copybtn{background:var(--surface-2);color:var(--gray-800);border:1px solid var(--border-hi);padding:5px 10px;border-radius:var(--shape-sm);font-size:11px;font-weight:500}
+.copybtn:hover{border-color:var(--green-500);color:var(--text)}
+.copybtn.done{background:var(--green-100);border-color:var(--green-500);color:var(--green-500)}
+.exprow td{background:#080709;padding:0}
+.detail{padding:16px 18px;display:grid;grid-template-columns:1.1fr 1fr;gap:20px}
+@media(max-width:820px){.detail{grid-template-columns:1fr}}
+.detail h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 9px;font-weight:500}
+.dtable{width:100%;min-width:0;font-size:12px}
+.dtable td,.dtable th{padding:5px 8px;border-bottom:1px solid var(--border)}
+.dtable th{text-align:right;color:var(--faint);font-weight:400}
+.dtable th.l,.dtable td.l{text-align:left}
+pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--shape-sm);padding:12px;font-size:11px;line-height:1.5;overflow-x:auto;color:var(--gray-800);margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;white-space:pre;max-height:280px}
+.mini{font-size:11px;color:var(--faint)}
+.pathpill{font-family:ui-monospace,monospace;font-size:11px;color:var(--green-600);background:var(--green-100);padding:2px 7px;border-radius:4px}
+.empty{padding:60px 20px;text-align:center;color:var(--faint)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--green-500);color:#02130d;padding:11px 20px;border-radius:var(--shape);font-weight:500;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.toast.show{opacity:1}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:60;backdrop-filter:blur(3px)}
+.overlay.show{display:flex}
+.spinner{width:34px;height:34px;border:3px solid var(--gray-300);border-top-color:var(--green-500);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.reslabel{font-size:11px;color:var(--faint);padding:9px 12px}
+.srcneed{font-weight:500}
+.srcneed.n1{color:var(--green-500)}.srcneed.n2{color:var(--green-600)}.srcneed.n3{color:var(--yellow-500)}.srcneed.no{color:var(--red-500)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Composite Feed Explorer</h1>
+        <div class="sub">SEDA Signal Composite (multi) OP · Binance · Lighter · Hyperliquid</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="stamp">Data captured<br><b id="stamp">—</b></div>
+      <button class="btn green" id="refreshBtn">↻ Refresh data</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- FILTERS -->
+    <aside class="filters">
+      <div class="panel">
+        <h3>Search</h3>
+        <input class="field" id="search" placeholder="Ticker or name…" autocomplete="off"/>
+      </div>
+
+      <div class="panel">
+        <h3>Providers</h3>
+        <div class="checks" id="provChecks"></div>
+        <div class="divider" style="margin:12px 0 10px"></div>
+        <label class="chk"><input type="checkbox" id="requireAll"/><span>Require ALL selected</span></label>
+        <div class="hint">Off = asset on any selected provider. Sums &amp; curl always use selected providers only.</div>
+      </div>
+
+      <div class="panel">
+        <h3>Usability thresholds</h3>
+        <div class="fgroup">
+          <label class="lab">Min 24h volume (USD, summed)</label>
+          <input class="field" id="minVol" inputmode="numeric" placeholder="e.g. 1000000"/>
+        </div>
+        <div class="fgroup" style="margin-top:12px">
+          <label class="lab">Min depth (USD, summed)</label>
+          <div class="two">
+            <input class="field" id="minDep" inputmode="numeric" placeholder="e.g. 250000"/>
+            <select class="field" id="band">
+              <option value="200">±2%</option>
+              <option value="100">±1%</option>
+              <option value="50">±0.5%</option>
+            </select>
+          </div>
+          <div class="hint">Depth = bid+ask USD within band of mid, summed across selected providers.</div>
+        </div>
+        <div class="fgroup" style="margin-top:12px">
+          <label class="lab">Min # sources</label>
+          <select class="field" id="minSrc">
+            <option value="1">1+ (any)</option>
+            <option value="2">2+ (multi-source)</option>
+            <option value="3">3+</option>
+            <option value="4">4 (all)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Asset class</h3>
+        <div class="chips" id="classChips"></div>
+      </div>
+
+      <button class="btn ghost" id="resetBtn">Reset filters</button>
+    </aside>
+
+    <!-- RESULTS -->
+    <main>
+      <div class="statbar" id="statbar"></div>
+      <div class="tablewrap">
+        <div class="reslabel" id="reslabel"></div>
+        <div class="tscroll">
+          <table id="tbl">
+            <thead><tr>
+              <th class="l" data-k="ticker">Asset <span class="ar"></span></th>
+              <th class="l" data-k="cls">Class</th>
+              <th class="l" data-k="provstr">Providers</th>
+              <th data-k="nsrc"># <span class="ar"></span></th>
+              <th data-k="vsum">24h Vol (sel) <span class="ar"></span></th>
+              <th data-k="dsum">Depth (sel) <span class="ar"></span></th>
+              <th data-k="srcNeed">Src→thresh</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied</div>
+<div class="overlay" id="overlay"><div style="text-align:center"><div class="spinner"></div><div id="ovtext" class="mini" style="color:var(--gray-700)">Refreshing…</div></div></div>
+
+<script src="data.js"></script>
+<script>
+const PROVIDERS=[
+  {k:"binance",label:"Binance Spot"},
+  {k:"binanceFutures",label:"Binance Futures"},
+  {k:"lighter",label:"Lighter"},
+  {k:"hydromancer",label:"Hyperliquid"},
+];
+const PROV_SHORT={binance:"Bin",binanceFutures:"BinFut",lighter:"Ltr",hydromancer:"HL"};
+const OP={
+  execProgramId:"746d66496fd39ef4ab628adf61b5cf705137219270fe2881555b1805ac136a27",
+  proxyUrl:"http://multi.proxy.mainnet.seda.xyz/proxy",
+  proxyPublicKey:"03ca83cf013a472640b85442431707022147693c1afe77303149957d632727819f",
+  endpoint:"https://fast-api.mainnet.seda.xyz/execute?encoding=hex",
+};
+let DATA=[], STATE={sortK:"vsum",sortDir:-1,providers:new Set(PROVIDERS.map(p=>p.k)),classes:new Set(),requireAll:false};
+
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmtUSD=v=>{ if(v==null||v===0) return "—"; if(v>=1e9)return "$"+(v/1e9).toFixed(2)+"B"; if(v>=1e6)return "$"+(v/1e6).toFixed(2)+"M"; if(v>=1e3)return "$"+(v/1e3).toFixed(0)+"k"; return "$"+Math.round(v); };
+const parseNum=s=>{ if(!s)return 0; const n=parseFloat(String(s).replace(/[^0-9.]/g,"")); return isNaN(n)?0:n; };
+
+function clsBadge(cls){
+  let c=""; if(cls.startsWith("equity"))c="eq"; else if(cls.startsWith("crypto"))c="cr"; else if(cls==="commodity"||cls==="FX"||cls.startsWith("index")||cls==="ETF")c="co";
+  return `<span class="badge ${c}">${cls}</span>`;
+}
+function provDots(a){
+  return `<span class="pv">`+PROVIDERS.map(p=>`<span class="p ${a.ex.includes(p.k)?'on':''}" title="${p.label}"></span>`).join("")+`</span>`;
+}
+
+// per-asset computed values given selected providers + band
+function compute(a){
+  const sel=[...STATE.providers];
+  const avail=a.ex.filter(e=>sel.includes(e));
+  const band=$("#band").value;
+  let vsum=0, dsum=0, perV=[];
+  for(const p of avail){
+    const v=a.vol[p]||0, d=(a.dep[band]&&a.dep[band][p])||0;
+    vsum+=v; dsum+=d; perV.push({p,v,d});
+  }
+  return {avail, vsum, dsum, perV, band};
+}
+// how many sources (largest depth first) to reach threshold
+function srcNeeded(perV,thr){
+  if(thr<=0) return 0;
+  const s=perV.map(x=>x.d).sort((a,b)=>b-a); let acc=0;
+  for(let i=0;i<s.length;i++){ acc+=s[i]; if(acc>=thr) return i+1; }
+  return -1; // never
+}
+
+function buildCurl(a){
+  const sel=[...STATE.providers], ex=a.ex.filter(e=>sel.includes(e));
+  const body={
+    execProgramId:OP.execProgramId,
+    execInputs:{
+      proxyConfig:{proxyUrl:OP.proxyUrl, proxyPublicKey:OP.proxyPublicKey},
+      path:a.path,
+      exchanges:ex,
+      responseType:"PriceOnly"
+    }
+  };
+  return `curl -L '${OP.endpoint}' \\\n-H 'Authorization: Bearer '"$SEDA_FAST_API_KEY" \\\n-H 'Content-Type: application/json' \\\n-d '`+JSON.stringify(body,null,2)+`'`;
+}
+
+function passes(a){
+  if(STATE.classes.size && !STATE.classes.has(a.cls)) return false;
+  const q=$("#search").value.trim().toLowerCase();
+  if(q && !(a.ticker.toLowerCase().includes(q)||(a.name||"").toLowerCase().includes(q))) return false;
+  const c=compute(a);
+  // provider availability
+  const sel=[...STATE.providers];
+  if(STATE.requireAll){ if(!sel.every(p=>a.ex.includes(p))) return false; }
+  else { if(c.avail.length===0) return false; }
+  a._c=c;
+  a._nselsrc=c.avail.length;
+  const minSrc=+$("#minSrc").value; if(a._nselsrc<minSrc) return false;
+  const minVol=parseNum($("#minVol").value), minDep=parseNum($("#minDep").value);
+  if(minVol>0 && c.vsum<minVol) return false;
+  if(minDep>0 && c.dsum<minDep) return false;
+  a._srcNeed = minDep>0 ? srcNeeded(c.perV,minDep) : (c.perV.length?srcNeeded(c.perV, c.dsum): -1);
+  a._minDep = minDep;
+  return true;
+}
+
+function render(){
+  const rows=DATA.filter(passes);
+  // sort
+  const k=STATE.sortK, dir=STATE.sortDir;
+  rows.sort((x,y)=>{
+    let a,b;
+    if(k==="vsum"){a=x._c.vsum;b=y._c.vsum;}
+    else if(k==="dsum"){a=x._c.dsum;b=y._c.dsum;}
+    else if(k==="nsrc"){a=x._nselsrc;b=y._nselsrc;}
+    else if(k==="srcNeed"){a=(x._srcNeed<0?99:x._srcNeed);b=(y._srcNeed<0?99:y._srcNeed);}
+    else if(k==="provstr"){a=x.ex.length;b=y.ex.length;}
+    else {a=(x[k]||"").toString().toLowerCase();b=(y[k]||"").toString().toLowerCase(); return a<b?-dir:a>b?dir:0;}
+    return (a-b)*dir;
+  });
+  const tb=$("#tbody"); tb.innerHTML="";
+  if(!rows.length){ tb.innerHTML=`<tr><td colspan="8"><div class="empty">No assets match these filters.</div></td></tr>`; }
+  const band=$("#band").value, bandLabel={"200":"±2%","100":"±1%","50":"±0.5%"}[band];
+  for(const a of rows){
+    const c=a._c;
+    const sn=a._srcNeed;
+    const snCls = sn<0?"no":(sn<=1?"n1":sn===2?"n2":"n3");
+    const snTxt = a._minDep>0 ? (sn<0?"never":sn) : "—";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td class="l"><span class="tk">${a.ticker}</span> <span class="nm">${a.name||""}</span></td>
+      <td class="l">${clsBadge(a.cls)}</td>
+      <td class="l">${provDots(a)} <span class="mini">${c.avail.map(p=>PROV_SHORT[p]).join(" · ")||"—"}</span></td>
+      <td>${a._nselsrc}</td>
+      <td class="num ${c.vsum?'':'z'}">${fmtUSD(c.vsum)}</td>
+      <td class="num ${c.dsum?'':'z'}">${fmtUSD(c.dsum)}</td>
+      <td class="srcneed ${snCls}">${snTxt}</td>
+      <td><button class="copybtn" data-tk="${a.ticker}">curl</button></td>`;
+    tr.querySelector("td").addEventListener("click",()=>toggleDetail(tr,a,band,bandLabel));
+    tr.querySelector(".copybtn").addEventListener("click",e=>{e.stopPropagation();copyCurl(a,e.target);});
+    tb.appendChild(tr);
+  }
+  // stats
+  const totVol=rows.reduce((s,a)=>s+a._c.vsum,0), totDep=rows.reduce((s,a)=>s+a._c.dsum,0);
+  $("#statbar").innerHTML=`
+    <div class="stat"><div class="n g">${rows.length}</div><div class="l">Matching assets</div></div>
+    <div class="stat"><div class="n">${rows.filter(a=>a._nselsrc>=2).length}</div><div class="l">Multi-source</div></div>
+    <div class="stat"><div class="n">${fmtUSD(totVol)}</div><div class="l">Σ 24h volume</div></div>
+    <div class="stat"><div class="n">${fmtUSD(totDep)}</div><div class="l">Σ depth ${bandLabel}</div></div>`;
+  $("#reslabel").textContent=`${rows.length} assets · depth band ${bandLabel} · providers: ${[...STATE.providers].map(p=>PROV_SHORT[p]).join(", ")||"none"}`;
+  updateProvCounts();
+}
+
+function toggleDetail(tr,a,band,bandLabel){
+  const nx=tr.nextElementSibling;
+  if(nx&&nx.classList.contains("exprow")){ nx.remove(); tr.classList.remove("exp"); return; }
+  $$(".exprow").forEach(e=>e.remove()); $$("tr.exp").forEach(e=>e.classList.remove("exp"));
+  tr.classList.add("exp");
+  const er=document.createElement("tr"); er.className="exprow";
+  const bands=[["50","±0.5%"],["100","±1%"],["200","±2%"]];
+  const rowsV=PROVIDERS.filter(p=>a.ex.includes(p.k)).map(p=>{
+    const on=STATE.providers.has(p.k);
+    return `<tr style="${on?'':'opacity:.4'}"><td class="l">${p.label}${on?'':' (excluded)'}</td>
+      <td>${fmtUSD(a.vol[p.k]||0)}</td>${bands.map(([b])=>`<td>${fmtUSD((a.dep[b]&&a.dep[b][p.k])||0)}</td>`).join("")}</tr>`;
+  }).join("");
+  er.innerHTML=`<td colspan="8"><div class="detail">
+    <div>
+      <h4>Per-venue liquidity</h4>
+      <table class="dtable"><thead><tr><th class="l">Venue</th><th>24h Vol</th><th>0.5%</th><th>1%</th><th>2%</th></tr></thead>
+      <tbody>${rowsV}</tbody></table>
+      <div style="margin-top:12px"><span class="mini">OP path</span><br><span class="pathpill">${a.path}</span></div>
+      <div style="margin-top:8px"><span class="mini">exchanges (selected ∩ available):</span> <span class="pathpill">${JSON.stringify(a.ex.filter(e=>STATE.providers.has(e)))}</span></div>
+    </div>
+    <div>
+      <h4>SEDA Fast — composite OP curl</h4>
+      <pre class="curl" id="curl-${a.ticker}">${escapeHtml(buildCurl(a))}</pre>
+      <button class="btn green sm" style="margin-top:10px" data-tk="${a.ticker}" id="cbtn-${a.ticker}">Copy curl</button>
+      <div class="mini" style="margin-top:8px">⚠ execInputs shape is a template — confirm against the multi OP spec.</div>
+    </div>
+  </div></td>`;
+  tr.after(er);
+  er.querySelector(".btn.green").addEventListener("click",e=>copyCurl(a,e.target));
+}
+function escapeHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function copyCurl(a,btn){
+  navigator.clipboard.writeText(buildCurl(a)).then(()=>{
+    if(btn){const t=btn.textContent;btn.textContent="✓ Copied";btn.classList.add("done");setTimeout(()=>{btn.textContent=t;btn.classList.remove("done");},1400);}
+    toast(`Copied curl for ${a.ticker}`);
+  });
+}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1500);}
+
+function updateProvCounts(){
+  PROVIDERS.forEach(p=>{
+    const c=DATA.filter(a=>a.ex.includes(p.k)).length;
+    const el=document.querySelector(`#provChecks .cnt[data-k="${p.k}"]`); if(el)el.textContent=c;
+  });
+}
+
+function buildFilters(){
+  $("#provChecks").innerHTML=PROVIDERS.map(p=>`
+    <label class="chk"><input type="checkbox" data-prov="${p.k}" checked><span>${p.label}</span><span class="cnt" data-k="${p.k}"></span></label>`).join("");
+  $$('#provChecks input').forEach(i=>i.addEventListener("change",()=>{
+    i.checked?STATE.providers.add(i.dataset.prov):STATE.providers.delete(i.dataset.prov); render();
+  }));
+  const classes=[...new Set(DATA.map(a=>a.cls))].sort((a,b)=>DATA.filter(x=>x.cls===b).length-DATA.filter(x=>x.cls===a).length);
+  $("#classChips").innerHTML=classes.map(c=>`<button class="chip" data-c="${c}">${c} <span style="opacity:.6">${DATA.filter(a=>a.cls===c).length}</span></button>`).join("");
+  $$('#classChips .chip').forEach(ch=>ch.addEventListener("click",()=>{
+    const c=ch.dataset.c; if(STATE.classes.has(c)){STATE.classes.delete(c);ch.classList.remove("on");}else{STATE.classes.add(c);ch.classList.add("on");} render();
+  }));
+}
+
+// events
+["search","minVol","minDep","band","minSrc"].forEach(id=>$("#"+id).addEventListener("input",render));
+$("#requireAll").addEventListener("change",e=>{STATE.requireAll=e.target.checked;render();});
+$$('#tbl thead th[data-k]').forEach(th=>th.addEventListener("click",()=>{
+  const k=th.dataset.k; if(STATE.sortK===k)STATE.sortDir*=-1; else{STATE.sortK=k;STATE.sortDir=(k==="ticker"||k==="cls")?1:-1;}
+  $$('#tbl thead th .ar').forEach(a=>a.textContent="");
+  th.querySelector(".ar").textContent=STATE.sortDir<0?"▼":"▲"; render();
+}));
+$("#resetBtn").addEventListener("click",()=>{
+  $("#search").value="";$("#minVol").value="";$("#minDep").value="";$("#minSrc").value="1";$("#band").value="200";
+  STATE.classes.clear();$$('#classChips .chip').forEach(c=>c.classList.remove("on"));
+  STATE.providers=new Set(PROVIDERS.map(p=>p.k));$$('#provChecks input').forEach(i=>i.checked=true);
+  STATE.requireAll=false;$("#requireAll").checked=false;render();
+});
+$("#refreshBtn").addEventListener("click",doRefresh);
+
+const HAS_BACKEND=/^(localhost|127\.)/.test(location.hostname);
+async function doRefresh(){
+  if(!HAS_BACKEND){
+    // static host (e.g. GitHub Pages): re-pull the published snapshot
+    try{
+      const r=await fetch("data.json?t="+Date.now(),{cache:"no-store"});
+      if(r.ok){const j=await r.json();DATA=j.assets;$("#stamp").textContent=fmtStamp(j.generated);buildFilters();render();toast("Loaded latest published snapshot");return;}
+    }catch(e){}
+    toast("Published snapshot — live refresh needs the local server");return;
+  }
+  const ov=$("#overlay");ov.classList.add("show");$("#ovtext").textContent="Refreshing all venue data — this can take several minutes…";
+  try{
+    const r=await fetch("/api/refresh",{method:"POST"});
+    if(!r.ok) throw new Error("refresh failed ("+r.status+")");
+    const j=await r.json();
+    if(j.assets){DATA=j.assets;$("#stamp").textContent=fmtStamp(j.generated);buildFilters();render();toast("Data refreshed");}
+  }catch(e){ toast("Refresh failed — check server.py logs"); }
+  ov.classList.remove("show");
+}
+function fmtStamp(s){ try{const d=new Date(s);return d.toLocaleString(undefined,{year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});}catch(_){return s;} }
+
+async function load(){
+  let j=null;
+  try{ const r=await fetch("data.json",{cache:"no-store"}); if(r.ok) j=await r.json(); }catch(e){}
+  if(!j && window.SEED_DATA) j=window.SEED_DATA;           // file:// fallback (embedded)
+  if(j){ DATA=j.assets; $("#stamp").textContent=fmtStamp(j.generated); }
+  else { $("#stamp").textContent="no data"; DATA=[]; }
+  // default sort arrow
+  const th=document.querySelector('#tbl thead th[data-k="vsum"] .ar'); if(th)th.textContent="▼";
+  buildFilters(); render();
+}
+load();
+</script>
+</body>
+</html>
