@@ -47,9 +47,23 @@ python3 refresh_data.py --quick  # quick
 | `server.py` | Static server + `/api/refresh` |
 | `fonts/` | Satoshi (SEDA brand font) |
 
-## ⚠ Confirm the curl schema
+## Composite OP curl
 
-The copy-curl uses the composite OP details (program `746d6649…136a27`, proxy
-`multi.proxy.mainnet.seda.xyz`, path `multi/:symbol/:market/:hydroTicker`), but the exact
-`execInputs` JSON shape is a **best-effort template**. Confirm it against the real multi-OP
-spec and adjust `buildCurl()` in `index.html` (and set your `$SEDA_FAST_API_KEY`).
+The copy-curl matches the **Signal Composite ("multi") OP** spec exactly (program
+`746d6649…136a27`, proxy `multi.proxy.mainnet.seda.xyz`, endpoint
+`fast-api.mainnet.seda.xyz/execute?encoding=json`, path `multi/:symbol/:market/:hydroTicker`).
+Set `$SEDA_FAST_API_KEY` in your shell before running a copied curl.
+
+- **`exchanges`** = the providers currently selected in the UI (intersected with what the
+  asset is actually listed on).
+- **`minSources`** = set via the "OP request: minSources" panel (default 1) — how many
+  venues must return a quote for the execution to succeed. Clamped to the number of
+  exchanges selected for that asset.
+- **`path`** = the asset's fixed 3-segment identifier (`symbol/market/hydroTicker`) — this
+  doesn't change with provider selection; unused segments are ignored by venues not in
+  `exchanges`.
+- Result is the **median** of resolved venue mids (`price`), plus each venue's individual
+  mid (`prices`). ~3–4s latency (fans out to all venues under one 5s timeout).
+
+See `signal-composite-op-guide.md` (parent directory) for the full spec, response envelope,
+WebSocket usage, and error handling.

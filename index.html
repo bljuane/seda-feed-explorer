@@ -179,14 +179,21 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
           <div class="hint">Depth = bid+ask USD within band of mid, summed across selected providers.</div>
         </div>
         <div class="fgroup" style="margin-top:12px">
-          <label class="lab">Min # sources</label>
+          <label class="lab">Min # sources available</label>
           <select class="field" id="minSrc">
             <option value="1">1+ (any)</option>
             <option value="2">2+ (multi-source)</option>
             <option value="3">3+</option>
             <option value="4">4 (all)</option>
           </select>
+          <div class="hint">Filters the asset list — how many selected venues must carry the asset.</div>
         </div>
+      </div>
+
+      <div class="panel">
+        <h3>OP request: minSources</h3>
+        <input class="field" id="minSources" type="number" min="1" max="4" value="1"/>
+        <div class="hint">Composite OP <code>minSources</code> — how many venues must return a quote for the execution to succeed. Used in the generated curl. Clamped to the # of venues selected per asset.</div>
       </div>
 
       <div class="panel">
@@ -238,7 +245,7 @@ const OP={
   execProgramId:"746d66496fd39ef4ab628adf61b5cf705137219270fe2881555b1805ac136a27",
   proxyUrl:"http://multi.proxy.mainnet.seda.xyz/proxy",
   proxyPublicKey:"03ca83cf013a472640b85442431707022147693c1afe77303149957d632727819f",
-  endpoint:"https://fast-api.mainnet.seda.xyz/execute?encoding=hex",
+  endpoint:"https://fast-api.mainnet.seda.xyz/execute?encoding=json",
 };
 let DATA=[], STATE={sortK:"vsum",sortDir:-1,providers:new Set(PROVIDERS.map(p=>p.k)),classes:new Set(),requireAll:false};
 
@@ -276,16 +283,18 @@ function srcNeeded(perV,thr){
 
 function buildCurl(a){
   const sel=[...STATE.providers], ex=a.ex.filter(e=>sel.includes(e));
+  const minSources=Math.max(1,Math.min(+$("#minSources").value||1, ex.length||1));
   const body={
     execProgramId:OP.execProgramId,
     execInputs:{
       proxyConfig:{proxyUrl:OP.proxyUrl, proxyPublicKey:OP.proxyPublicKey},
-      path:a.path,
       exchanges:ex,
-      responseType:"PriceOnly"
-    }
+      path:a.path,
+      minSources
+    },
+    inputEncoding:"auto"
   };
-  return `curl -L '${OP.endpoint}' \\\n-H 'Authorization: Bearer '"$SEDA_FAST_API_KEY" \\\n-H 'Content-Type: application/json' \\\n-d '`+JSON.stringify(body,null,2)+`'`;
+  return `curl -X POST '${OP.endpoint}' \\\n-H 'accept: application/json' \\\n-H "Authorization: Bearer $SEDA_FAST_API_KEY" \\\n-H 'Content-Type: application/json' \\\n-d '`+JSON.stringify(body,null,2)+`'`;
 }
 
 function passes(a){
@@ -379,7 +388,7 @@ function toggleDetail(tr,a,band,bandLabel){
       <h4>SEDA Fast — composite OP curl</h4>
       <pre class="curl" id="curl-${a.ticker}">${escapeHtml(buildCurl(a))}</pre>
       <button class="btn green sm" style="margin-top:10px" data-tk="${a.ticker}" id="cbtn-${a.ticker}">Copy curl</button>
-      <div class="mini" style="margin-top:8px">⚠ execInputs shape is a template — confirm against the multi OP spec.</div>
+      <div class="mini" style="margin-top:8px">Median of resolved venue mids · ~3–4s latency · requires <code>$SEDA_FAST_API_KEY</code></div>
     </div>
   </div></td>`;
   tr.after(er);
@@ -416,7 +425,7 @@ function buildFilters(){
 }
 
 // events
-["search","minVol","minDep","band","minSrc"].forEach(id=>$("#"+id).addEventListener("input",render));
+["search","minVol","minDep","band","minSrc","minSources"].forEach(id=>$("#"+id).addEventListener("input",render));
 $("#requireAll").addEventListener("change",e=>{STATE.requireAll=e.target.checked;render();});
 $$('#tbl thead th[data-k]').forEach(th=>th.addEventListener("click",()=>{
   const k=th.dataset.k; if(STATE.sortK===k)STATE.sortDir*=-1; else{STATE.sortK=k;STATE.sortDir=(k==="ticker"||k==="cls")?1:-1;}
@@ -424,7 +433,7 @@ $$('#tbl thead th[data-k]').forEach(th=>th.addEventListener("click",()=>{
   th.querySelector(".ar").textContent=STATE.sortDir<0?"▼":"▲"; render();
 }));
 $("#resetBtn").addEventListener("click",()=>{
-  $("#search").value="";$("#minVol").value="";$("#minDep").value="";$("#minSrc").value="1";$("#band").value="200";
+  $("#search").value="";$("#minVol").value="";$("#minDep").value="";$("#minSrc").value="1";$("#band").value="200";$("#minSources").value="1";
   STATE.classes.clear();$$('#classChips .chip').forEach(c=>c.classList.remove("on"));
   STATE.providers=new Set(PROVIDERS.map(p=>p.k));$$('#provChecks input').forEach(i=>i.checked=true);
   STATE.requireAll=false;$("#requireAll").checked=false;render();
