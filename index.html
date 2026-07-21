@@ -109,7 +109,7 @@ main{min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:20p
 .field{background:var(--gray-100);border:1px solid var(--border);border-radius:var(--shape-sm);color:var(--text);padding:8px 10px;font-family:inherit;font-size:13px;width:100%;transition:border-color .12s,background-color .12s}
 .field:hover{border-color:var(--border-hi)}
 .field:focus{outline:none;border-color:var(--gray-400)}
-.field::placeholder{color:var(--gray-300)}
+.field::placeholder{color:var(--muted)}
 .field:disabled{opacity:.5;cursor:not-allowed}
 .field.error{border-color:var(--red-500)}
 select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23868392' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center;padding-right:28px}
@@ -121,6 +121,13 @@ select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg 
 .chk input:checked{background:var(--text);border-color:var(--text)}
 .chk input:checked::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .chk .cnt{margin-left:auto;font-size:11px;color:var(--faint)}
+.chk input:indeterminate{background:var(--text);border-color:var(--text)}
+.chk input:indeterminate::after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:2px;background:#000;border-radius:1px}
+/* Asset-class checkbox tree */
+#classChips{display:flex;flex-direction:column;gap:9px}
+#classChips .chk-group{font-weight:500;color:var(--text)}
+#classChips .chk-group:not(:first-child){margin-top:5px}
+#classChips .chk-child{margin-left:25px}
 
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--border-hi);color:var(--gray-700);cursor:pointer;background:transparent;transition:.12s}
@@ -176,7 +183,7 @@ tbody tr.exp{background:#0c0b0d}
 .pv .p{width:9px;height:9px;border-radius:2px;background:var(--gray-300)}
 .pv .p.on{background:var(--green-500)}
 .num.z{color:var(--gray-300)}
-.copybtn{background:transparent;color:var(--gray-800);border:1px solid var(--border-hi);padding:5px 10px;border-radius:var(--shape-sm);font-size:11px;font-weight:500;transition:background-color .12s,color .12s,border-color .12s}
+.copybtn{background:transparent;color:var(--gray-800);border:1px solid var(--border);padding:5px 10px;border-radius:var(--shape-sm);font-size:11px;font-weight:500;transition:background-color .12s,color .12s,border-color .12s}
 .copybtn:hover{background:var(--gray-100);color:var(--text);border-color:var(--gray-300)}
 .copybtn.done{background:var(--green-100);border-color:transparent;color:var(--green-500)}
 .exprow td{background:#080709;padding:0}
@@ -437,8 +444,8 @@ function render(){
   $("#statbar").innerHTML=`
     <div class="stat"><div class="n g">${rows.length}</div><div class="l">Matching assets</div></div>
     <div class="stat"><div class="n">${rows.filter(a=>a._nselsrc>=2).length}</div><div class="l">Multi-source</div></div>
-    <div class="stat"><div class="n">${fmtUSD(totVol)}</div><div class="l">Σ 24h volume</div></div>
-    <div class="stat"><div class="n">${fmtUSD(totDep)}</div><div class="l">Σ depth ${bandLabel}</div></div>`;
+    <div class="stat"><div class="n">${fmtUSD(totVol)}</div><div class="l">Total 24h volume</div></div>
+    <div class="stat"><div class="n">${fmtUSD(totDep)}</div><div class="l">Total depth ${bandLabel}</div></div>`;
   updateProvCounts();
   syncPresetHighlight();
 }
@@ -511,24 +518,29 @@ function buildClassFilters(){
     const total=present.reduce((s,k)=>s+counts[k],0);
     const selCount=present.filter(k=>STATE.classes.has(k)).length;
     const state=selCount===0?"none":selCount===present.length?"all":"some";
-    const div=document.createElement("div"); div.className="cgroup";
-    div.innerHTML=`<button class="chip grouphdr ${state==='all'?'on':''} ${state==='some'?'partial':''}" data-group="${g.label}">
-        <span class="gcheck">${state==='all'?'✓':state==='some'?'–':''}</span>${g.label} <span style="opacity:.6">${total}</span>
-      </button>
-      <div class="csub">${present.map(k=>`<button class="chip ${STATE.classes.has(k)?'on':''}" data-c="${k}">${SUBLABEL[k]||k} <span style="opacity:.6">${counts[k]}</span></button>`).join("")}</div>`;
-    wrap.appendChild(div);
+    // group row (tri-state parent checkbox)
+    const grow=document.createElement("label"); grow.className="chk chk-group";
+    grow.innerHTML=`<input type="checkbox"><span>${g.label}</span><span class="cnt">${total}</span>`;
+    const gin=grow.querySelector("input");
+    gin.checked=state==="all"; gin.indeterminate=state==="some";
+    gin.addEventListener("change",()=>{
+      const allOn=present.every(k=>STATE.classes.has(k));
+      present.forEach(k=>allOn?STATE.classes.delete(k):STATE.classes.add(k));
+      buildClassFilters(); render();
+    });
+    wrap.appendChild(grow);
+    // child rows (individual classes)
+    present.forEach(k=>{
+      const crow=document.createElement("label"); crow.className="chk chk-child";
+      crow.innerHTML=`<input type="checkbox"><span>${SUBLABEL[k]||k}</span><span class="cnt">${counts[k]}</span>`;
+      const cin=crow.querySelector("input"); cin.checked=STATE.classes.has(k);
+      cin.addEventListener("change",()=>{
+        STATE.classes.has(k)?STATE.classes.delete(k):STATE.classes.add(k);
+        buildClassFilters(); render();
+      });
+      wrap.appendChild(crow);
+    });
   });
-  wrap.querySelectorAll('button[data-group]').forEach(btn=>btn.addEventListener("click",()=>{
-    const g=groups.find(x=>x.label===btn.dataset.group), present=g.keys.filter(k=>counts[k]);
-    const allOn=present.every(k=>STATE.classes.has(k));
-    present.forEach(k=>allOn?STATE.classes.delete(k):STATE.classes.add(k));
-    buildClassFilters(); render();
-  }));
-  wrap.querySelectorAll('button[data-c]').forEach(btn=>btn.addEventListener("click",e=>{
-    e.stopPropagation();
-    const c=btn.dataset.c; STATE.classes.has(c)?STATE.classes.delete(c):STATE.classes.add(c);
-    buildClassFilters(); render();
-  }));
 }
 
 const VOL_PRESETS=[100000,500000,1000000,5000000,10000000,50000000,100000000];
