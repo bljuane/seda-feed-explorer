@@ -10,15 +10,28 @@
 @font-face{font-family:"Satoshi";src:url("fonts/Satoshi-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
 
 :root{
+  /* Grays — SEDA scale, dark → light */
   --gray-100:#111012;--gray-200:#2a292e;--gray-300:#54525c;--gray-400:#868392;--gray-500:#a8a4b7;
   --gray-700:#cbc8d4;--gray-800:#dcdbe2;--gray-900:#eeedf1;
+  --gray-850:#131019;--gray-825:#15141a;
+  /* Primary (purple) */
   --purple-100:#131019;--purple-300:#5d527f;--purple-500:#baa3fd;--purple-700:#d6c8fe;
+  /* Success (green) */
   --green-100:#02130d;--green-300:#0b5d42;--green-500:#16ba84;--green-600:#45c89d;
+  /* Danger (red) + warning (yellow) */
   --red-100:#190707;--red-500:#fc4444;
   --yellow-100:#191904;--yellow-500:#fbf724;
-  --bg:#000;--surface:var(--gray-100);--surface-2:var(--gray-200);
+  /* Semantic surfaces & text */
+  --bg:#000;--surface:#000;--surface-2:var(--gray-850);
   --text:#fff;--muted:var(--gray-500);--faint:var(--gray-400);--border:var(--gray-200);--border-hi:var(--gray-300);
-  --shape:8px 0 8px 0; --shape-sm:4px 0 4px 0; --radius:8px;
+  /* Badge tokens — filled: tinted bg + saturated text */
+  --badge-primary-bg:var(--purple-100);--badge-primary-text:var(--purple-500);
+  --badge-success-bg:var(--green-100);--badge-success-text:var(--green-500);
+  --badge-danger-bg:var(--red-100);--badge-danger-text:var(--red-500);
+  --badge-warning-bg:var(--yellow-100);--badge-warning-text:var(--yellow-500);
+  --badge-neutral-bg:var(--gray-100);--badge-neutral-text:var(--muted);
+  /* SEDA uses flat, symmetric radii */
+  --shape:4px; --shape-sm:4px; --radius:4px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -29,21 +42,45 @@ a{color:var(--purple-500);text-decoration:none}
 header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:16px}
 .brand{display:flex;align-items:center;gap:12px}
 .brand .dot{width:14px;height:26px;background:var(--green-500);border-radius:var(--shape-sm)}
-h1{font-size:26px;font-weight:500;margin:0;letter-spacing:-.02em}
+h1{font-size:30px;font-weight:500;margin:0;letter-spacing:-.03em}
 .sub{color:var(--muted);font-size:13px;margin-top:3px}
 .meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 .stamp{font-size:12px;color:var(--faint);text-align:right;line-height:1.3}
 .stamp b{color:var(--gray-700);font-weight:500}
 
 button{font-family:inherit;cursor:pointer;border:none;font-size:13px}
-.btn{background:var(--text);color:#000;font-weight:500;padding:9px 16px;border-radius:var(--shape);transition:.15s}
-.btn:hover{background:var(--gray-800)}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn.ghost{background:transparent;color:var(--gray-800);border:1px solid var(--border-hi)}
-.btn.ghost:hover{background:var(--surface)}
-.btn.green{background:var(--green-500);color:#02130d}
-.btn.green:hover{background:var(--green-600)}
-.btn.sm{padding:6px 11px;font-size:12px}
+/* ── Buttons — SEDA system (muted; no success variant) ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:34px;padding:0 16px;
+  border:1px solid transparent;border-radius:var(--shape);
+  font-weight:500;font-size:13px;letter-spacing:.3px;line-height:1;white-space:nowrap;
+  background:var(--text);color:#000;
+  transition:background-color .12s,color .12s,border-color .12s,transform .04s}
+.btn:hover{background:var(--gray-900)}
+.btn:active{background:var(--gray-800);transform:translateY(1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+/* Outline / tertiary */
+.btn.ghost{background:transparent;color:var(--gray-900);border-color:var(--border-hi)}
+.btn.ghost:hover{background:var(--gray-100);color:var(--text)}
+.btn.ghost:active{background:var(--gray-200);transform:translateY(1px)}
+/* Secondary — muted gray fill */
+.btn.secondary{background:var(--gray-200);color:var(--gray-900)}
+.btn.secondary:hover{background:var(--gray-300);color:var(--text)}
+.btn.secondary:active{background:var(--gray-300);transform:translateY(1px)}
+/* Danger — muted red, saturates on press */
+.btn.danger{background:var(--red-100);color:var(--red-500)}
+.btn.danger:hover{background:#2a0d0d}
+.btn.danger:active{background:var(--red-500);color:#190707;transform:translateY(1px)}
+/* Link — text only */
+.btn.link{background:transparent;height:auto;padding:0;border:none;color:var(--purple-500);letter-spacing:.2px}
+.btn.link:hover{color:var(--text)}
+/* .green retained for existing markup → now Solid (SEDA has no success button) */
+.btn.green{background:var(--text);color:#000}
+.btn.green:hover{background:var(--gray-900)}
+.btn.green:active{background:var(--gray-800);transform:translateY(1px)}
+/* Sizes */
+.btn.lg{height:40px;padding:0 20px;font-size:14px}
+.btn.sm{height:28px;padding:0 11px;font-size:12px;gap:6px}
+.btn.xs{height:24px;padding:0 9px;font-size:11px;gap:5px}
 
 .layout{display:grid;grid-template-columns:296px 1fr;gap:20px;align-items:start}
 @media(max-width:1080px){.layout{grid-template-columns:1fr}}
@@ -54,16 +91,17 @@ button{font-family:inherit;cursor:pointer;border:none;font-size:13px}
 .fgroup{display:flex;flex-direction:column;gap:8px}
 .fgroup>label.lab{font-size:12px;color:var(--gray-700);font-weight:500}
 
-.field{background:#000;border:1px solid var(--border-hi);border-radius:var(--shape-sm);color:var(--text);padding:8px 10px;font-family:inherit;font-size:13px;width:100%}
+.field{background:var(--gray-100);border:1px solid var(--border-hi);border-radius:var(--shape-sm);color:var(--text);padding:8px 10px;font-family:inherit;font-size:13px;width:100%}
 .field:focus{outline:none;border-color:var(--green-500)}
 .field::placeholder{color:var(--gray-300)}
 select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23868392' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 9px center;padding-right:28px}
 
 .checks{display:flex;flex-direction:column;gap:7px}
 .chk{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--gray-800);cursor:pointer;user-select:none}
-.chk input{appearance:none;width:16px;height:16px;border:1px solid var(--border-hi);border-radius:3px;background:#000;position:relative;cursor:pointer;flex:none}
-.chk input:checked{background:var(--green-500);border-color:var(--green-500)}
-.chk input:checked::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #02130d;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.chk input{appearance:none;width:16px;height:16px;border:1px solid var(--gray-300);border-radius:var(--shape-sm);background:var(--gray-200);position:relative;cursor:pointer;flex:none;transition:background-color .12s,border-color .12s}
+.chk input:hover{border-color:var(--gray-400)}
+.chk input:checked{background:var(--text);border-color:var(--text)}
+.chk input:checked::after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #000;border-width:0 2px 2px 0;transform:rotate(45deg)}
 .chk .cnt{margin-left:auto;font-size:11px;color:var(--faint)}
 
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -89,14 +127,14 @@ select.field{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg 
 
 .statbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--shape-sm);padding:9px 14px;min-width:120px}
-.stat .n{font-size:20px;font-weight:500;letter-spacing:-.02em}
+.stat .n{font-size:22px;font-weight:500;letter-spacing:-.03em}
 .stat .l{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-top:1px}
 .stat .n.g{color:var(--green-500)}
 
 .tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--shape);overflow:hidden}
 .tscroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px;min-width:900px}
-thead th{position:sticky;top:0;background:var(--surface-2);color:var(--gray-700);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:11px 12px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border)}
+thead th{position:sticky;top:0;background:var(--surface);color:var(--gray-700);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:right;padding:11px 12px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border)}
 thead th.l{text-align:left}
 thead th:hover{color:var(--text)}
 thead th .ar{opacity:.5;font-size:9px;margin-left:3px}
@@ -106,24 +144,25 @@ tbody tr:hover{background:#0c0b0d}
 tbody tr.exp{background:#0c0b0d}
 .tk{font-weight:500;font-size:14px}
 .nm{color:var(--faint);font-size:12px}
-.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid var(--border-hi);color:var(--gray-500);text-transform:capitalize}
-.badge.eq{color:var(--purple-500);border-color:var(--purple-300)}
-.badge.cr{color:var(--green-600);border-color:var(--green-300)}
-.badge.co{color:var(--yellow-500);border-color:#7e7c12}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;line-height:1;padding:4px 9px;border-radius:var(--shape-sm);border:1px solid transparent;text-transform:capitalize;letter-spacing:.01em;white-space:nowrap;background:var(--badge-neutral-bg);color:var(--badge-neutral-text)}
+.badge.eq{background:var(--badge-primary-bg);color:var(--badge-primary-text)}
+.badge.cr{background:var(--badge-success-bg);color:var(--badge-success-text)}
+.badge.co{background:var(--badge-warning-bg);color:var(--badge-warning-text)}
+.badge.dn{background:var(--badge-danger-bg);color:var(--badge-danger-text)}
 .pv{display:inline-flex;gap:3px}
 .pv .p{width:9px;height:9px;border-radius:2px;background:var(--gray-300)}
 .pv .p.on{background:var(--green-500)}
 .num.z{color:var(--gray-300)}
-.copybtn{background:var(--surface-2);color:var(--gray-800);border:1px solid var(--border-hi);padding:5px 10px;border-radius:var(--shape-sm);font-size:11px;font-weight:500}
-.copybtn:hover{border-color:var(--green-500);color:var(--text)}
-.copybtn.done{background:var(--green-100);border-color:var(--green-500);color:var(--green-500)}
+.copybtn{background:transparent;color:var(--gray-800);border:1px solid var(--border-hi);padding:5px 10px;border-radius:var(--shape-sm);font-size:11px;font-weight:500;transition:background-color .12s,color .12s,border-color .12s}
+.copybtn:hover{background:var(--gray-100);color:var(--text);border-color:var(--gray-300)}
+.copybtn.done{background:var(--green-100);border-color:transparent;color:var(--green-500)}
 .exprow td{background:#080709;padding:0}
-.detail{padding:16px 18px;display:grid;grid-template-columns:1.1fr 1fr;gap:20px}
+.detail{padding:16px 18px;display:grid;grid-template-columns:1.1fr 1fr;gap:20px;text-align:left}
 @media(max-width:820px){.detail{grid-template-columns:1fr}}
 .detail h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 9px;font-weight:500}
 .dtable{width:100%;min-width:0;font-size:12px}
 .dtable td,.dtable th{padding:5px 8px;border-bottom:1px solid var(--border)}
-.dtable th{text-align:right;color:var(--faint);font-weight:400}
+.dtable th{text-align:right;color:var(--faint);font-weight:400;background:transparent}
 .dtable th.l,.dtable td.l{text-align:left}
 pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--shape-sm);padding:12px;font-size:11px;line-height:1.5;overflow-x:auto;color:var(--gray-800);margin:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;white-space:pre;max-height:280px}
 .mini{font-size:11px;color:var(--faint)}
@@ -135,9 +174,9 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
 .overlay.show{display:flex}
 .spinner{width:34px;height:34px;border:3px solid var(--gray-300);border-top-color:var(--green-500);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.reslabel{font-size:11px;color:var(--faint);padding:9px 12px}
 .srcneed{font-weight:500}
 .srcneed.n1{color:var(--green-500)}.srcneed.n2{color:var(--green-600)}.srcneed.n3{color:var(--yellow-500)}.srcneed.no{color:var(--red-500)}
+.infoi{opacity:.55;font-size:10px;margin-left:2px;cursor:help}
 </style>
 </head>
 <body>
@@ -222,7 +261,6 @@ pre.curl{background:#000;border:1px solid var(--border-hi);border-radius:var(--s
     <main>
       <div class="statbar" id="statbar"></div>
       <div class="tablewrap">
-        <div class="reslabel" id="reslabel"></div>
         <div class="tscroll">
           <table id="tbl">
             <thead><tr>
@@ -374,7 +412,6 @@ function render(){
     <div class="stat"><div class="n">${rows.filter(a=>a._nselsrc>=2).length}</div><div class="l">Multi-source</div></div>
     <div class="stat"><div class="n">${fmtUSD(totVol)}</div><div class="l">Σ 24h volume</div></div>
     <div class="stat"><div class="n">${fmtUSD(totDep)}</div><div class="l">Σ depth ${bandLabel}</div></div>`;
-  $("#reslabel").textContent=`${rows.length} assets · depth band ${bandLabel} · providers: ${[...STATE.providers].map(p=>PROV_SHORT[p]).join(", ")||"none"}`;
   updateProvCounts();
   syncPresetHighlight();
 }
